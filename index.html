@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="夜ルーティン">
+<meta name="theme-color" content="#0f0f14">
+<link rel="manifest" href="manifest.json">
+<title>夜のルーティン</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #0f0f14;
+  --surface: #16161e;
+  --surface2: #1e1e2a;
+  --border: rgba(255,255,255,0.07);
+  --border2: rgba(255,255,255,0.12);
+  --text: #e8e8f0;
+  --text2: rgba(232,232,240,0.5);
+  --text3: rgba(232,232,240,0.28);
+  --teal: #4ecdc4;
+  --teal-dim: rgba(78,205,196,0.12);
+  --teal-border: rgba(78,205,196,0.25);
+  --amber: #f6c344;
+  --amber-dim: rgba(246,195,68,0.1);
+  --blue: #7eb8f7;
+  --blue-dim: rgba(126,184,247,0.1);
+  --red: #ff6b6b;
+  --red-dim: rgba(255,107,107,0.1);
+  --purple: #a78bfa;
+  --purple-dim: rgba(167,139,250,0.1);
+  --radius: 12px;
+  --radius-sm: 8px;
+}
+
+html, body {
+  height: 100%;
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-weight: 300;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+
+body {
+  min-height: 100dvh;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+}
+
+.app {
+  max-width: 430px;
+  margin: 0 auto;
+  padding: 0 0 100px;
+  min-height: 100dvh;
+}
+
+/* Header */
+.header {
+  padding: 20px 20px 0;
+  position: sticky;
+  top: 0;
+  background: var(--bg);
+  z-index: 10;
+  padding-top: calc(20px + env(safe-area-inset-top));
+}
+
+.header-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.app-title {
+  font-size: 13px;
+  color: var(--text3);
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.1em;
+}
+
+.clock {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--teal);
+  letter-spacing: 0.05em;
+}
+
+/* Progress ring */
+.progress-section {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  padding: 16px 20px 20px;
+  border-bottom: 0.5px solid var(--border);
+}
+
+.ring-wrap {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  flex-shrink: 0;
+}
+
+.ring-wrap svg {
+  transform: rotate(-90deg);
+}
+
+.ring-bg { fill: none; stroke: var(--surface2); stroke-width: 5; }
+.ring-fill { fill: none; stroke: var(--teal); stroke-width: 5; stroke-linecap: round; transition: stroke-dashoffset 0.5s ease; }
+
+.ring-center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ring-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 18px;
+  font-weight: 400;
+  color: var(--text);
+  line-height: 1;
+}
+
+.ring-label {
+  font-size: 9px;
+  color: var(--text3);
+  margin-top: 2px;
+  letter-spacing: 0.05em;
+}
+
+.progress-stats {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.stat-key {
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.04em;
+}
+
+.stat-val {
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  color: var(--text);
+}
+
+.stat-val.ok { color: var(--teal); }
+.stat-val.warn { color: var(--amber); }
+.stat-val.over { color: var(--red); }
+
+/* Daytime note */
+.daytime-note {
+  margin: 16px 20px 0;
+  padding: 10px 14px;
+  background: var(--purple-dim);
+  border: 0.5px solid rgba(167,139,250,0.2);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.daytime-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--purple);
+  flex-shrink: 0;
+}
+
+.daytime-text {
+  font-size: 12px;
+  color: rgba(167,139,250,0.8);
+}
+
+/* Section */
+.section {
+  padding: 20px 20px 0;
+}
+
+.section-label {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+  font-family: 'DM Mono', monospace;
+}
+
+/* Task card */
+.task-card {
+  background: var(--surface);
+  border: 0.5px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  margin-bottom: 8px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, opacity 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+
+.task-card:active { background: var(--surface2); }
+
+.task-card.done {
+  opacity: 0.35;
+}
+
+.task-card.done .task-name {
+  text-decoration: line-through;
+  text-decoration-color: var(--text3);
+}
+
+.check-circle {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1.5px solid var(--border2);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.task-card.done .check-circle {
+  background: var(--teal);
+  border-color: var(--teal);
+}
+
+.check-mark {
+  width: 10px;
+  height: 7px;
+  border-left: 1.5px solid #0f0f14;
+  border-bottom: 1.5px solid #0f0f14;
+  transform: rotate(-45deg) translateY(-1px);
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.task-card.done .check-mark { opacity: 1; }
+
+.task-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.task-name {
+  font-size: 14px;
+  font-weight: 400;
+  color: var(--text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  margin-bottom: 3px;
+}
+
+.task-time {
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  color: var(--text3);
+  letter-spacing: 0.03em;
+}
+
+.task-dur {
+  font-family: 'DM Mono', monospace;
+  font-size: 12px;
+  flex-shrink: 0;
+  padding: 3px 8px;
+  border-radius: 6px;
+}
+
+.cat-routine .task-dur { background: var(--teal-dim); color: var(--teal); }
+.cat-exercise .task-dur { background: var(--amber-dim); color: var(--amber); }
+.cat-study .task-dur { background: var(--blue-dim); color: var(--blue); }
+
+.delete-btn {
+  background: none;
+  border: none;
+  color: var(--text3);
+  cursor: pointer;
+  padding: 4px;
+  font-size: 14px;
+  line-height: 1;
+  flex-shrink: 0;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.delete-btn:active { color: var(--red); }
+
+/* Slack indicator */
+.slack-bar {
+  margin: 12px 20px 0;
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.03em;
+}
+
+.slack-bar.ok { background: var(--teal-dim); color: var(--teal); border: 0.5px solid var(--teal-border); }
+.slack-bar.over { background: var(--red-dim); color: var(--red); border: 0.5px solid rgba(255,107,107,0.2); }
+
+/* Add task form */
+.add-section {
+  position: fixed;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 100%;
+  max-width: 430px;
+  background: var(--bg);
+  border-top: 0.5px solid var(--border);
+  padding: 12px 20px calc(12px + env(safe-area-inset-bottom));
+  z-index: 20;
+}
+
+.add-row {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.add-input {
+  flex: 1;
+  background: var(--surface2);
+  border: 0.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px;
+  font-weight: 300;
+  padding: 9px 12px;
+  outline: none;
+  transition: border-color 0.15s;
+  min-width: 0;
+}
+
+.add-input:focus { border-color: rgba(78,205,196,0.4); }
+.add-input::placeholder { color: var(--text3); }
+
+.add-dur {
+  width: 58px;
+  background: var(--surface2);
+  border: 0.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text);
+  font-family: 'DM Mono', monospace;
+  font-size: 13px;
+  padding: 9px 8px;
+  outline: none;
+  text-align: center;
+  transition: border-color 0.15s;
+}
+
+.add-dur:focus { border-color: rgba(78,205,196,0.4); }
+.add-dur::placeholder { color: var(--text3); }
+
+.cat-select {
+  background: var(--surface2);
+  border: 0.5px solid var(--border2);
+  border-radius: var(--radius-sm);
+  color: var(--text2);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 12px;
+  padding: 9px 8px;
+  outline: none;
+  cursor: pointer;
+}
+
+.add-btn {
+  background: var(--teal);
+  border: none;
+  border-radius: var(--radius-sm);
+  color: #0f0f14;
+  font-size: 18px;
+  width: 38px;
+  height: 38px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: opacity 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.add-btn:active { opacity: 0.75; }
+
+/* Reset button */
+.reset-btn {
+  display: block;
+  width: calc(100% - 40px);
+  margin: 16px 20px 0;
+  padding: 12px;
+  background: transparent;
+  border: 0.5px solid var(--border2);
+  border-radius: var(--radius);
+  color: var(--text3);
+  font-family: 'Noto Sans JP', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.reset-btn:active { background: var(--surface2); color: var(--text2); }
+
+/* Edit mode toggle */
+.edit-toggle {
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 11px;
+  color: var(--text3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px 0;
+  -webkit-tap-highlight-color: transparent;
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="header">
+    <div class="header-top">
+      <span class="app-title">NIGHT ROUTINE</span>
+      <span class="clock" id="clock">--:--</span>
+    </div>
+    <div class="progress-section">
+      <div class="ring-wrap">
+        <svg width="80" height="80" viewBox="0 0 80 80">
+          <circle class="ring-bg" cx="40" cy="40" r="34"/>
+          <circle class="ring-fill" id="ring" cx="40" cy="40" r="34"
+            stroke-dasharray="213.6"
+            stroke-dashoffset="213.6"/>
+        </svg>
+        <div class="ring-center">
+          <span class="ring-pct" id="ring-pct">0%</span>
+          <span class="ring-label">完了</span>
+        </div>
+      </div>
+      <div class="progress-stats">
+        <div class="stat-item">
+          <span class="stat-key">タスク</span>
+          <span class="stat-val" id="stat-tasks">0 / 0</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-key">残り時間</span>
+          <span class="stat-val" id="stat-remain">—</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-key">就寝まで</span>
+          <span class="stat-val" id="stat-until">—</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="daytime-note">
+    <div class="daytime-dot"></div>
+    <span class="daytime-text">昼休み：読書（巨人たちの星）30分</span>
+  </div>
+
+  <div id="task-sections"></div>
+
+  <div id="slack-bar"></div>
+
+  <button class="reset-btn" onclick="resetAll()">今日をリセット</button>
+</div>
+
+<div class="add-section">
+  <div class="add-row">
+    <input class="add-input" type="text" id="new-label" placeholder="タスク名" />
+    <input class="add-dur" type="number" id="new-dur" placeholder="分" min="5" max="120" step="5" />
+    <select class="cat-select" id="new-cat">
+      <option value="routine">生活</option>
+      <option value="exercise">運動</option>
+      <option value="study">勉強</option>
+    </select>
+    <button class="add-btn" onclick="addTask()">＋</button>
+  </div>
+</div>
+
+<script>
+const BEDTIME = 22 * 60;
+const START_MIN = 19 * 60;
+const STORAGE_KEY = 'night-routine-tasks-v2';
+const DONE_KEY = 'night-routine-done-' + new Date().toDateString();
+
+const CAT_META = {
+  routine:  { label: 'ルーティン', order: 0 },
+  exercise: { label: '運動',       order: 1 },
+  study:    { label: '勉強',       order: 2 },
+};
+
+const DEFAULT_TASKS = [
+  { id:1, label:'夕食（準備・食事・弁当箱含む洗い物）', dur:45, cat:'routine' },
+  { id:2, label:'入浴・ドライヤー・スキンケア',         dur:90, cat:'routine' },
+  { id:3, label:'筋トレ・ストレッチ',                   dur:15, cat:'exercise'},
+  { id:4, label:'巡回監査士補 勉強',                   dur:15, cat:'study'   },
+  { id:5, label:'翌日の準備・歯磨き',                  dur:15, cat:'routine' },
+];
+
+let tasks = loadTasks();
+let doneIds = loadDone();
+let nextId = Math.max(...tasks.map(t=>t.id), 5) + 1;
+
+function loadTasks() {
+  try {
+    const s = localStorage.getItem(STORAGE_KEY);
+    return s ? JSON.parse(s) : DEFAULT_TASKS.map(t=>({...t}));
+  } catch { return DEFAULT_TASKS.map(t=>({...t})); }
+}
+
+function saveTasks() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(tasks)); } catch {}
+}
+
+function loadDone() {
+  try {
+    const s = localStorage.getItem(DONE_KEY);
+    return s ? new Set(JSON.parse(s)) : new Set();
+  } catch { return new Set(); }
+}
+
+function saveDone() {
+  try { localStorage.setItem(DONE_KEY, JSON.stringify([...doneIds])); } catch {}
+}
+
+function hhmm(m) {
+  const h = Math.floor(m / 60) % 24;
+  const mm = m % 60;
+  return String(h).padStart(2,'0') + ':' + String(mm).padStart(2,'0');
+}
+
+function render() {
+  const container = document.getElementById('task-sections');
+  container.innerHTML = '';
+
+  const catOrder = ['routine','exercise','study'];
+  let cursor = START_MIN;
+
+  catOrder.forEach(cat => {
+    const ct = tasks.filter(t => t.cat === cat);
+    if (!ct.length) return;
+
+    const sec = document.createElement('div');
+    sec.className = 'section';
+
+    const lbl = document.createElement('div');
+    lbl.className = 'section-label';
+    lbl.textContent = CAT_META[cat].label;
+    sec.appendChild(lbl);
+
+    ct.forEach(t => {
+      const start = cursor;
+      cursor += t.dur;
+      const done = doneIds.has(t.id);
+
+      const card = document.createElement('div');
+      card.className = `task-card cat-${cat}${done ? ' done' : ''}`;
+      card.innerHTML = `
+        <div class="check-circle"><div class="check-mark"></div></div>
+        <div class="task-body">
+          <div class="task-name">${t.label}</div>
+          <div class="task-time">${hhmm(start)} → ${hhmm(cursor)}</div>
+        </div>
+        <div class="task-dur">${t.dur}分</div>
+        <button class="delete-btn" aria-label="削除">✕</button>
+      `;
+
+      card.querySelector('.check-circle').addEventListener('click', e => {
+        e.stopPropagation();
+        if (doneIds.has(t.id)) doneIds.delete(t.id);
+        else doneIds.add(t.id);
+        saveDone();
+        render();
+        updateStats();
+      });
+
+      card.querySelector('.delete-btn').addEventListener('click', e => {
+        e.stopPropagation();
+        tasks = tasks.filter(x => x.id !== t.id);
+        saveTasks();
+        render();
+        updateStats();
+      });
+
+      sec.appendChild(card);
+    });
+
+    container.appendChild(sec);
+  });
+
+  const total = tasks.reduce((s,t) => s + t.dur, 0);
+  const slack = BEDTIME - (START_MIN + total);
+  const bar = document.getElementById('slack-bar');
+  bar.className = 'slack-bar ' + (slack >= 0 ? 'ok' : 'over');
+  bar.textContent = slack >= 0
+    ? `就寝 ${hhmm(BEDTIME)}  ゆとり +${slack}分`
+    : `就寝時間を ${Math.abs(slack)}分 超過`;
+}
+
+function updateStats() {
+  const done = doneIds.size;
+  const total = tasks.length;
+  const pct = total > 0 ? Math.round(done / total * 100) : 0;
+  const circ = 2 * Math.PI * 34;
+
+  document.getElementById('ring-pct').textContent = pct + '%';
+  document.getElementById('ring').style.strokeDashoffset = circ * (1 - pct / 100);
+  document.getElementById('stat-tasks').textContent = done + ' / ' + total;
+
+  const remain = tasks.filter(t => !doneIds.has(t.id)).reduce((s,t) => s + t.dur, 0);
+  document.getElementById('stat-remain').textContent = remain + '分';
+
+  const now = new Date();
+  const nowMin = now.getHours() * 60 + now.getMinutes();
+  const diff = BEDTIME - nowMin;
+  const el = document.getElementById('stat-until');
+  el.textContent = diff >= 0 ? diff + '分' : '超過';
+  el.className = 'stat-val ' + (diff > 30 ? 'ok' : diff >= 0 ? 'warn' : 'over');
+}
+
+function updateClock() {
+  const now = new Date();
+  document.getElementById('clock').textContent =
+    String(now.getHours()).padStart(2,'0') + ':' + String(now.getMinutes()).padStart(2,'0');
+}
+
+function addTask() {
+  const label = document.getElementById('new-label').value.trim();
+  const dur = parseInt(document.getElementById('new-dur').value);
+  const cat = document.getElementById('new-cat').value;
+  if (!label || !dur || dur < 1) return;
+  tasks.push({ id: nextId++, label, dur, cat });
+  saveTasks();
+  document.getElementById('new-label').value = '';
+  document.getElementById('new-dur').value = '';
+  render();
+  updateStats();
+}
+
+function resetAll() {
+  doneIds.clear();
+  saveDone();
+  render();
+  updateStats();
+}
+
+document.getElementById('new-label').addEventListener('keydown', e => {
+  if (e.key === 'Enter') document.getElementById('new-dur').focus();
+});
+
+document.getElementById('new-dur').addEventListener('keydown', e => {
+  if (e.key === 'Enter') addTask();
+});
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./sw.js').catch(() => {});
+}
+
+render();
+updateStats();
+updateClock();
+setInterval(updateStats, 30000);
+setInterval(updateClock, 10000);
+</script>
+</body>
+</html>
